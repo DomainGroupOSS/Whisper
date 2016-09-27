@@ -11,7 +11,8 @@ public class ShoutFactory {
   private static var queue = [ShoutView]()
 
   public static func newShout(announcement: Announcement, to: UIViewController, completion: (() -> ())? = {}) {
-    let shout = ShoutView(announcement: announcement, to: to, completion: completion)
+    let shout = ShoutView()
+    shout.craft(announcement, to: to, completion: completion)
     if self.displaying {
       self.queue += [shout]
     }
@@ -147,18 +148,6 @@ open class ShoutView: UIView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  convenience init(announcement: Announcement, to: UIViewController, completion: (() -> ())? = {}) {
-    self.init()
-
-    Dimensions.height = UIApplication.shared.isStatusBarHidden ? 70 : 80
-
-    panGestureActive = false
-    shouldSilent = false
-    self.announcement = announcement
-    self.to = to
-    self.completion = completion
-  }
-
   deinit {
     NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
   }
@@ -166,8 +155,15 @@ open class ShoutView: UIView {
   // MARK: - Configuration
 
   open func craft(_ announcement: Announcement, to: UIViewController, completion: (() -> ())?) {
+    Dimensions.height = UIApplication.shared.isStatusBarHidden ? 70 : 80
+
+    panGestureActive = false
+    shouldSilent = false
+
     configureView(announcement)
     shout(to: to)
+
+    self.completion = completion
   }
 
   open func configureView(_ announcement: Announcement) {
@@ -175,12 +171,6 @@ open class ShoutView: UIView {
     imageView.image = announcement.image
     titleLabel.text = announcement.title
     subtitleLabel.text = announcement.subtitle
-
-    [titleLabel, subtitleLabel].forEach {
-      $0.sizeToFit()
-    }
-
-    if imageView.image == nil { Dimensions.textOffset = 18 }
 
     displayTimer.invalidate()
     displayTimer = Timer.scheduledTimer(timeInterval: announcement.duration,
