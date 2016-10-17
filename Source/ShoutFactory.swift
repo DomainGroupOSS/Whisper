@@ -1,9 +1,37 @@
 import UIKit
 
 let shoutView = ShoutView()
+public func Shout(announcement: Announcement, to: UIViewController, completion: (() -> ())? = {}) {
+  ShoutFactory.newShout(announcement, to: to, completion: completion)
+}
+
+public class ShoutFactory {
+  public static var displaying = false
+  private static var queue = [ShoutView]()
+
+  public static func newShout(announcement: Announcement, to: UIViewController, completion: (() -> ())? = {}) {
+    let shout = ShoutView(announcement: announcement, to: to, completion: completion)
+    if self.displaying {
+      self.queue += [shout]
+    }
+    else {
+      self.displaying = true
+      shout.craft(announcement, to: to, completion: completion)
+    }
+  }
+
+  public static func displayNext() {
+    self.displaying = false
+    if !self.queue.isEmpty {
+      self.displaying = true
+      let not = self.queue[0]
+      not.craft(not.announcement!, to: not.to!, completion: not.completion)
+      self.queue.removeAtIndex(0)
+    }
+  }
+}
 
 public class ShoutView: UIView {
-
   public struct Dimensions {
     public static let indicatorHeight: CGFloat = 6
     public static let indicatorWidth: CGFloat = 50
@@ -20,14 +48,14 @@ public class ShoutView: UIView {
     view.clipsToBounds = true
 
     return view
-    }()
+  }()
 
   public private(set) lazy var gestureContainer: UIView = {
     let view = UIView()
     view.userInteractionEnabled = true
 
     return view
-    }()
+  }()
 
   public private(set) lazy var indicatorView: UIView = {
     let view = UIView()
@@ -36,7 +64,7 @@ public class ShoutView: UIView {
     view.userInteractionEnabled = true
 
     return view
-    }()
+  }()
 
   public private(set) lazy var imageView: UIImageView = {
     let imageView = UIImageView()
@@ -45,7 +73,7 @@ public class ShoutView: UIView {
     imageView.contentMode = .ScaleAspectFill
 
     return imageView
-    }()
+  }()
 
   public private(set) lazy var titleLabel: UILabel = {
     let label = UILabel()
@@ -54,7 +82,7 @@ public class ShoutView: UIView {
     label.numberOfLines = 2
 
     return label
-    }()
+  }()
 
   public private(set) lazy var subtitleLabel: UILabel = {
     let label = UILabel()
@@ -63,7 +91,7 @@ public class ShoutView: UIView {
     label.numberOfLines = 2
 
     return label
-    }()
+  }()
 
   public private(set) lazy var tapGestureRecognizer: UITapGestureRecognizer = { [unowned self] in
     let gesture = UITapGestureRecognizer()
@@ -80,6 +108,7 @@ public class ShoutView: UIView {
     }()
 
   public private(set) var announcement: Announcement?
+  public private(set) var to: UIViewController?
   public private(set) var displayTimer = NSTimer()
   public private(set) var panGestureActive = false
   public private(set) var shouldSilent = false
@@ -196,6 +225,7 @@ public class ShoutView: UIView {
         self.displayTimer.invalidate()
         self.removeFromSuperview()
     })
+    ShoutFactory.displayNext()
   }
 
   // MARK: - Timer methods
