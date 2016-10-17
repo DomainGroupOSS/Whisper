@@ -10,7 +10,8 @@ public class ShoutFactory {
   private static var queue = [ShoutView]()
 
   public static func newShout(announcement: Announcement, to: UIViewController, completion: (() -> ())? = {}) {
-    let shout = ShoutView(announcement: announcement, to: to, completion: completion)
+    let shout = ShoutView()
+    shout.craft(announcement, to: to, completion: completion)
     if self.displaying {
       self.queue += [shout]
     }
