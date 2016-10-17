@@ -153,6 +153,7 @@ public class ShoutView: UIView {
     panGestureActive = false
     shouldSilent = false
     configureView(announcement)
+    self.to = to
 
     if shouldShout {
         shout(to: to)
