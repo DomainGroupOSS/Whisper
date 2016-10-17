@@ -11,7 +11,7 @@ public class ShoutFactory {
 
   public static func newShout(announcement: Announcement, to: UIViewController, completion: (() -> ())? = {}) {
     let shout = ShoutView()
-    shout.craft(announcement, to: to, completion: completion)
+    shout.craft(announcement, to: to, completion: completion, shouldShout: false)
     if self.displaying {
       self.queue += [shout]
     }
@@ -147,13 +147,16 @@ public class ShoutView: UIView {
 
   // MARK: - Configuration
 
-  public func craft(announcement: Announcement, to: UIViewController, completion: (() -> ())?) {
+  public func craft(announcement: Announcement, to: UIViewController, completion: (() -> ())?, shouldShout: Bool = true) {
     Dimensions.height = UIApplication.sharedApplication().statusBarHidden ? 70 : 80
 
     panGestureActive = false
     shouldSilent = false
     configureView(announcement)
-    shout(to: to)
+
+    if shouldShout {
+        shout(to: to)
+    }
 
     self.completion = completion
   }
