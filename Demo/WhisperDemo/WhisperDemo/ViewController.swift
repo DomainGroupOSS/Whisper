@@ -60,8 +60,8 @@ class ViewController: UIViewController {
 
   lazy var presentWhistleButton: UIButton = { [unowned self] in
     let button = UIButton()
-    button.addTarget(self, action: #selector(presentWhistleButtonDidPress(_:)), forControlEvents: .TouchUpInside)
-    button.setTitle("Present permanent Whistle", forState: .Normal)
+    button.addTarget(self, action: #selector(presentQueuedShoutsButtonDidPress(_:)), forControlEvents: .TouchUpInside)
+    button.setTitle("Present queued shouts", forState: .Normal)
 
     return button
     }()
@@ -169,12 +169,18 @@ class ViewController: UIViewController {
     show(whistle: murmur)
   }
 
-  func presentWhistleButtonDidPress(button: UIButton) {
-    let murmur = Murmur(title: "This is a permanent whistle...",
-                        backgroundColor: UIColor.redColor(),
-                        titleColor: UIColor.whiteColor())
+  var count = 0
 
-    show(whistle: murmur, action: .Present)
+  func presentQueuedShoutsButtonDidPress(button: UIButton) {
+    guard let navigationController = navigationController else { return }
+    ShoutFactory.newShout(Announcement(title: "Count: \(count)"), to: navigationController)
+    count += 1
+
+//    let murmur = Murmur(title: "This is a permanent whistle...",
+//                        backgroundColor: UIColor.redColor(),
+//                        titleColor: UIColor.whiteColor())
+//
+//    show(whistle: murmur, action: .Present)
   }
 
   // MARK - Configuration
