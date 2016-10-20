@@ -1,6 +1,54 @@
 import UIKit
 import Whisper
 
+let AnnouncementQueue = WhisperQueue<Announcement>(animationDuration: 5) { announcement, vc in
+    Whisper.show(shout: announcement, to: vc)
+}
+
+class WhisperQueue<T> {
+    let animationDuration: Double
+    var lastStarted: TimeInterval = 0.0
+    var lastFinished: TimeInterval = 0.01
+    var numberOfWaitingAnnouncements = 0
+
+    typealias Presenter = (T, UIViewController) -> Void
+
+    let presenter: Presenter
+
+    init(animationDuration: Double, presenter: @escaping Presenter) {
+        self.animationDuration = animationDuration
+        self.presenter = presenter
+    }
+
+    func show(_ message: T, to vc: UIViewController) {
+        let now = NSDate.timeIntervalSinceReferenceDate
+
+        if lastFinished > lastStarted && self.numberOfWaitingAnnouncements == 0 {
+            show(message, to: vc, after: 0)
+        } else {
+            let delay = Double(numberOfWaitingAnnouncements) * self.animationDuration - (now - lastStarted)
+
+            show(message, to: vc, after: delay)
+        }
+    }
+
+    func show(_ message: T, to vc: UIViewController, after: TimeInterval) {
+        self.numberOfWaitingAnnouncements += 1
+
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + after) {
+            self.lastStarted = NSDate.timeIntervalSinceReferenceDate
+
+            self.presenter(message, vc)
+
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + self.animationDuration) {
+                self.lastFinished = NSDate.timeIntervalSinceReferenceDate
+                self.numberOfWaitingAnnouncements -= 1
+            }
+        }
+    }
+}
+
+
 class ViewController: UIViewController {
 
   lazy var scrollView: UIScrollView = UIScrollView()
@@ -147,13 +195,23 @@ class ViewController: UIViewController {
     Whisper.show(whisper: message, to: navigationController, action: .present)
   }
 
+  var count = 0
+
   func presentNotificationDidPress(_ button: UIButton) {
-    let announcement = Announcement(title: "Ramon Gilabert", subtitle: "Vadym Markov just commented your post: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'", image: UIImage(named: "avatar"), duration: 30)
+    let announcement = Announcement(
+        title: "Ramon Gilabert",
+        subtitle: "\(count): Vadym Markov just commented your post: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'", image: UIImage(named: "avatar"),
+        duration: 6
+    )
 
     if let navigationController = navigationController {
-      Whisper.show(shout: announcement, to: navigationController, completion: {
-        print("The shout was silent.")
-      })
+
+        AnnouncementQueue.show(announcement, to: navigationController)
+        count += 1
+
+//      Whisper.show(shout: announcement, to: navigationController, completion: {
+//        print("The shout was silent.")
+//      })
     }
   }
 
