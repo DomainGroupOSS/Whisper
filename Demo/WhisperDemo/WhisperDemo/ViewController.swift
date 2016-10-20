@@ -1,49 +1,41 @@
 import UIKit
 import Whisper
 
-let AnnouncementQueue = WhisperQueue<Announcement>(animationDuration: 5) { announcement, vc in
-    Whisper.show(shout: announcement, to: vc)
-}
+class Queue {
+    static let dismissDuration = 0.5
+    static let shared = Queue { announcement, vc, completion in
+        Whisper.show(shout: announcement, to: vc, completion: completion)
+    }
 
-class WhisperQueue<T> {
-    let animationDuration: Double
-    var lastStarted: TimeInterval = 0.0
-    var lastFinished: TimeInterval = 0.01
-    var numberOfWaitingAnnouncements = 0
+    var willFinishAt: TimeInterval = NSDate.timeIntervalSinceReferenceDate
 
-    typealias Presenter = (T, UIViewController) -> Void
+    typealias Presenter = (Announcement, UIViewController, (@escaping () -> Void)) -> Void
 
     let presenter: Presenter
 
-    init(animationDuration: Double, presenter: @escaping Presenter) {
-        self.animationDuration = animationDuration
+    init(presenter: @escaping Presenter) {
         self.presenter = presenter
     }
-
-    func show(_ message: T, to vc: UIViewController) {
+    
+    func show(_ announcement: Announcement, to vc: UIViewController) {
         let now = NSDate.timeIntervalSinceReferenceDate
 
-        if lastFinished > lastStarted && self.numberOfWaitingAnnouncements == 0 {
-            show(message, to: vc, after: 0)
-        } else {
-            let delay = Double(numberOfWaitingAnnouncements) * self.animationDuration - (now - lastStarted)
+        if now > self.willFinishAt {
+            self.show(announcement, to: vc, after: 0)
 
-            show(message, to: vc, after: delay)
+            self.willFinishAt = now + announcement.duration + Queue.dismissDuration
+        } else {
+            let delay = self.willFinishAt - now
+
+            self.show(announcement, to: vc, after: delay)
+
+            self.willFinishAt = self.willFinishAt + announcement.duration + Queue.dismissDuration
         }
     }
 
-    func show(_ message: T, to vc: UIViewController, after: TimeInterval) {
-        self.numberOfWaitingAnnouncements += 1
-
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + after) {
-            self.lastStarted = NSDate.timeIntervalSinceReferenceDate
-
-            self.presenter(message, vc)
-
-            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + self.animationDuration) {
-                self.lastFinished = NSDate.timeIntervalSinceReferenceDate
-                self.numberOfWaitingAnnouncements -= 1
-            }
+    func show(_ announcement: Announcement, to vc: UIViewController, after: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + after) {
+            self.presenter(announcement, vc, {})
         }
     }
 }
@@ -200,13 +192,13 @@ class ViewController: UIViewController {
   func presentNotificationDidPress(_ button: UIButton) {
     let announcement = Announcement(
         title: "Ramon Gilabert",
-        subtitle: "\(count): Vadym Markov just commented your post: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'", image: UIImage(named: "avatar"),
-        duration: 6
+        subtitle: "\(count)", image: UIImage(named: "avatar"),
+        duration: 3
     )
 
     if let navigationController = navigationController {
 
-        AnnouncementQueue.show(announcement, to: navigationController)
+        Queue.shared.show(announcement, to: navigationController)
         count += 1
 
 //      Whisper.show(shout: announcement, to: navigationController, completion: {
