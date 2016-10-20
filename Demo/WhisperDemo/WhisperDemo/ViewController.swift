@@ -1,9 +1,9 @@
 import UIKit
 import Whisper
 
-class Queue {
+class WhisperQueue {
     static let dismissDuration = 0.5
-    static let shared = Queue { announcement, vc, completion in
+    static let shared = WhisperQueue { announcement, vc, completion in
         Whisper.show(shout: announcement, to: vc, completion: completion)
     }
 
@@ -23,13 +23,13 @@ class Queue {
         if now > self.willFinishAt {
             self.show(announcement, to: vc, after: 0)
 
-            self.willFinishAt = now + announcement.duration + Queue.dismissDuration
+            self.willFinishAt = now + announcement.duration + WhisperQueue.dismissDuration
         } else {
             let delay = self.willFinishAt - now
 
             self.show(announcement, to: vc, after: delay)
 
-            self.willFinishAt = self.willFinishAt + announcement.duration + Queue.dismissDuration
+            self.willFinishAt = self.willFinishAt + announcement.duration + WhisperQueue.dismissDuration
         }
     }
 
@@ -198,7 +198,7 @@ class ViewController: UIViewController {
 
     if let navigationController = navigationController {
 
-        Queue.shared.show(announcement, to: navigationController)
+        WhisperQueue.shared.show(announcement, to: navigationController)
         count += 1
 
 //      Whisper.show(shout: announcement, to: navigationController, completion: {
